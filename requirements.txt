@@ -1,0 +1,3 @@
+pdfminer==20140328
+peewee==2.5.0
+Scrapy==0.24.5
