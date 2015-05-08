@@ -1,3 +1,6 @@
 pdfminer==20140328
 peewee==2.5.0
 Scrapy==0.24.5
+service-identity==14.0.0
+gensim>=0.11
+nltk>=3.0
