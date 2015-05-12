@@ -19,4 +19,16 @@ class Lecture(BaseModel):
     path = peewee.CharField()
     content = peewee.TextField()
 
-db.create_tables([Course, Lecture], safe=True)
+class LectureWord(BaseModel):
+    lecture = peewee.ForeignKeyField(Lecture)
+    word = peewee.CharField()
+    count = peewee.IntegerField()
+    active = peewee.BooleanField()
+
+class CourseWord(BaseModel):
+    course = peewee.ForeignKeyField(Course)
+    word = peewee.CharField()
+    count = peewee.IntegerField()
+    active = peewee.BooleanField()
+
+db.create_tables([Course, Lecture, CourseWord, LectureWord], safe=True)
