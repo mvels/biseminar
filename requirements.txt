@@ -1,6 +1,10 @@
 pdfminer==20140328
-peewee==2.5.0
-Scrapy==0.24.5
-service-identity==14.0.0
+peewee>=2.5
+Scrapy>=0.24
+service-identity>=14.0
 gensim>=0.11
 nltk>=3.0
+scipy>=0.15
+numpy>=1.9
+scikit-learn>=0.16
+lda>=1.0
