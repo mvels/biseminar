@@ -51,7 +51,7 @@ class Pdf2Txt(object):
 
 def main():
     pdf2txt = Pdf2Txt()
-    lectures = Lecture.select().where(Lecture.content == '').limit(1000)
+    lectures = Lecture.select().where(Lecture.content == '', Lecture.url % "*pdf").limit(1000)
     for lecture in lectures:
         if not os.path.exists(lecture.path):
             print "File not found: {0}".format(lecture.path)

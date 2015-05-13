@@ -19,5 +19,5 @@ NEWSPIDER_MODULE = 'tutorial.spiders'
 
 ITEM_PIPELINES = {
     'tutorial.pipelines.CoursePipeline': 300,
-    'tutorial.pipelines.PdfPipeline': 400
+    'tutorial.pipelines.DataPipeline': 400
 }
