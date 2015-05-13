@@ -1,36 +1,31 @@
 import numpy as np
 import lda
-import lda.datasets
 import unicodedata
-import re
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import CountVectorizer
-from tutorial.DataModel import Lecture, Course
+import lda.datasets
+from sklearn.feature_extraction import DictVectorizer
+from tutorial.DataModel import Course, CourseWord, LectureWord
 
 
 def main():
-    #download stop-words during first run
-    #nltk.download("stopwords")
 
-    courses = Course.select()#.limit(5)
-
-    #Get data for each course
-    course_combined_text = []
+    # Get data for each course
+    courses = Course.select()
+    courses_dict = []
     course_titles = []
     for course in courses:
-        lectures = Lecture.select().where(Lecture.course == course)
-        course_combined_text.append(unicode.join(u' ', [lecture.content for lecture in lectures]))
+        course_words = CourseWord.select().where(CourseWord.course == course)
+        courses_dict.append(dict([(x.word, x.count) for x in course_words]))
         course_titles.append(remove_accents(course.name))
 
     #Get the vocabulary and the word count per document matrix
-    res = get_bag_of_words(course_combined_text)
+    res = get_bag_of_words(courses_dict)
 
     #Print all the words and their counts
     #print_word_dist(res)
 
     #Perform lda with 5000 iterations, total 20 topics
     model = lda.LDA(n_topics=20, n_iter=5000, random_state=1)
-    n_top_words = 8
+    n_top_words = 11
 
     #Fit model
     model.fit(res['X'].astype('int32'))
@@ -47,15 +42,15 @@ def main():
 
 
 def get_bag_of_words(courses_material):
-    # Initialize the "CountVectorizer" object, which is scikit-learn's
+    # Initialize the "DictVectorizer" object, which is scikit-learn's
     # bag of words tool.
-    vectorizer = CountVectorizer(analyzer="word", max_features=None)
+    vectorizer = DictVectorizer()
 
     # fit_transform() does two functions: First, it fits the model
     # and learns the vocabulary; second, it transforms our training data
     # into feature vectors. The input to fit_transform should be a list of
     # strings.
-    train_data_features = vectorizer.fit_transform([clean_text(x) for x in courses_material])
+    train_data_features = vectorizer.fit_transform(courses_material)
 
     # Convert the result to an array
     train_data_features = train_data_features.toarray()
@@ -66,6 +61,12 @@ def get_bag_of_words(courses_material):
     return {'X': train_data_features, 'vocab': vocab}
 
 
+def remove_accents(input_str):
+    nkfd_form = unicodedata.normalize('NFKD', input_str)
+    only_ascii = nkfd_form.encode('ASCII', 'ignore')
+    return only_ascii
+
+
 def print_word_dist(data):
     # Sum up the counts of each vocabulary word
     dist = np.sum(data['X'], axis=0)
@@ -74,33 +75,6 @@ def print_word_dist(data):
     # appears in the training set
     for tag, count in zip(data['vocab'], dist):
         print count, tag
-
-
-def clean_text(raw_text):
-    # 1.Unicode normalized and encoded to ASCII
-    text_str = remove_accents(raw_text)
-
-    # 2. Remove non-letters
-    letters_only = re.sub("[^a-zA-Z]", " ", text_str)
-
-    # 3. Convert to lower case, split into individual words
-    words = letters_only.lower().split()
-
-    # 4. In Python, searching a set is much faster than searching
-    #   a list, so convert the stop words to a set
-    stops = set(stopwords.words("english"))
-
-    # 5. Remove english stop words
-    meaningful_words = [w for w in words if not w in stops]
-
-    # 6. Return as one string with words separated by space
-    return ' '.join(meaningful_words)
-
-
-def remove_accents(input_str):
-    nkfd_form = unicodedata.normalize('NFKD', input_str)
-    only_ascii = nkfd_form.encode('ASCII', 'ignore')
-    return only_ascii
 
 
 if __name__ == '__main__':
