@@ -7,20 +7,6 @@
 
 import scrapy
 
-
-class DmozItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    title = scrapy.Field()
-    link = scrapy.Field()
-    desc = scrapy.Field()
-
-class AppspotItems(scrapy.Item):
-    topic = scrapy.Field()
-    author = scrapy.Field()
-    id = scrapy.Field()
-    last_post = scrapy.Field()
-
 class CoursesItem(scrapy.Item):
     title = scrapy.Field()
     link = scrapy.Field()
@@ -30,9 +16,11 @@ class CoursePageItem(scrapy.Item):
     title = scrapy.Field()
     link = scrapy.Field()
 
-class PdfItem(scrapy.Item):
+class DataItem(scrapy.Item):
+    type = scrapy.Field()
     course_code = scrapy.Field()
     title = scrapy.Field()
     link = scrapy.Field()
     path = scrapy.Field()
+    content = scrapy.Field()
 

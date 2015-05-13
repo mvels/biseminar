@@ -7,7 +7,7 @@
 
 import os
 from items import CoursesItem
-from items import PdfItem
+from items import DataItem
 import urllib
 from DataModel import Course, Lecture, db
 import peewee
@@ -15,7 +15,6 @@ import peewee
 class CoursePipeline(object):
     def process_item(self, item, spider):
         if isinstance(item, CoursesItem):
-            dirname = 'pdf' + ''.join(item['link'])
             course_code = ''.join(item['code'])
             try:
                 course = Course.get(Course.code == course_code)
@@ -27,25 +26,21 @@ class CoursePipeline(object):
                             code = course_code,
                             name = ''.join(item['title']),
                             url = ''.join(item['link']),
-                            path = dirname
+                            path = 'data' + ''.join(item['link'])
                         )
                 except peewee.OperationalError as e:
                     print 'Could not create a record for {0}'.format(course_code)
 
-                if not os.path.exists(dirname):
-                    try:
-                        os.makedirs(dirname)
-                    except OSError as e:
-                        print "Could not create directory: " + dirname
-
         return item
 
-class PdfPipeline(object):
+class DataPipeline(object):
     def process_item(self, item, spider):
-        if isinstance(item, PdfItem):
+        if isinstance(item, DataItem):
             url = ''.join(item['link'])
-            dirname = 'pdf' + ''.join(item['path']) + '/'
+            dirname = 'data' + ''.join(item['path']) + '/'
             course_code = ''.join(item['course_code'])
+            content = ''.join(item['content'])
+            path = ''
 
             try:
                 course = Course.get(Course.code == course_code)
@@ -59,26 +54,41 @@ class PdfPipeline(object):
                 except OSError as e:
                     print "Could not create directory: " + dirname
 
-            filename = os.path.basename(url)
-            path = dirname + filename
-            print "Saving {0} => {1}".format(url, path)
+
             try:
-                urllib.urlretrieve(url, path)
+                lecture = Lecture.get(Lecture.course == course, Lecture.url == url)
+            except Lecture.DoesNotExist as e:
+                lecture = None
+
+            # if no lecture record and no content, then download data (pdf, pptx, etc. according to url
+            if lecture == None and len(content) == 0:
+                filename = os.path.basename(url)
+                path = dirname + filename
+                print "Saving {0} => {1}".format(url, path)
                 try:
-                    lecture = Lecture.get(Lecture.course == course, Lecture.url == url)
-                except Lecture.DoesNotExist as e:
-                    print "Lecture record not found, creating ..."
+                    urllib.urlretrieve(url, path)
+                except IOError as e:
+                    print "Could not save file: {1} into {2}".format(url, path)
+
+            if lecture == None:
+                print "Lecture record not found, creating ..."
+                try:
+                    with db.transaction():
+                        Lecture.create(
+                            course = course,
+                            url = url,
+                            path = path,
+                            content = content
+                        )
+                except peewee.OperationalError as e:
+                    print "Could not create a record for course {0} lecture {1}".format(course_code, url)
+            else:
+                if len(content) > 0:
                     try:
                         with db.transaction():
-                            Lecture.create(
-                                course = course,
-                                url = url,
-                                path = path,
-                                content = ''
-                            )
+                            lecture.content = content
+                            lecture.save()
                     except peewee.OperationalError as e:
-                        print "Could not create a record for course {0} lecture {1}".format(course_code, url)
+                        print e
 
-            except IOError as e:
-                print "Could not save file: {1} into {2}".format(url, path)
         return item
