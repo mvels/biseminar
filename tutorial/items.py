@@ -7,14 +7,17 @@
 
 import scrapy
 
+
 class CoursesItem(scrapy.Item):
     title = scrapy.Field()
     link = scrapy.Field()
     code = scrapy.Field()
 
+
 class CoursePageItem(scrapy.Item):
     title = scrapy.Field()
     link = scrapy.Field()
+
 
 class DataItem(scrapy.Item):
     type = scrapy.Field()
@@ -24,3 +27,6 @@ class DataItem(scrapy.Item):
     path = scrapy.Field()
     content = scrapy.Field()
 
+
+class TeacherItem(scrapy.Item):
+    name = scrapy.Field()

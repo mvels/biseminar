@@ -16,8 +16,10 @@ from DataModel import db, Course, Lecture
 # for course in courseQuery:
 #     print course.code, course.name
 
-try:
-    course = Course.get(Course.code == 'testcode')
-    print 'course exists'
-except Course.DoesNotExist:
-    print 'no such course'
+# try:
+#     course = Course.get(Course.code == 'testcode')
+#     print 'course exists'
+# except Course.DoesNotExist:
+#     print 'no such course'
+
+

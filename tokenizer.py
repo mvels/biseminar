@@ -2,9 +2,11 @@ from nltk.stem import PorterStemmer
 from nltk import WordNetLemmatizer
 from nltk import word_tokenize
 from nltk.corpus import stopwords
-from tutorial.DataModel import db, Course, Lecture, LectureWord, CourseWord
+from tutorial.DataModel import db, Course, Lecture, LectureWord, CourseWord, CorpusWord
 import operator
 import peewee
+from StopWord import StopWord
+
 
 class Tokenizer(object):
     def __init__(self, lemmatize = True):
@@ -12,15 +14,19 @@ class Tokenizer(object):
         self.stemmer = PorterStemmer()
         self.lemmatizer = WordNetLemmatizer()
         self.lemmatize = lemmatize
-        self.stopwords = set(stopwords.words('english'))
+        sw = StopWord()
+        self.stopwords = self.get_stopwords()
 
+    def get_stopwords(self):
+        sw = StopWord()
+        return set(sw.words)
+        # return set(stopwords.words('english'))
 
     def lemstem(self, token):
         if self.lemmatize:
             return self.lemmatizer.lemmatize(token)
         else:
             return self.stemmer.stem(token)
-
 
     def extractTokens(self, text):
         try:
@@ -30,21 +36,25 @@ class Tokenizer(object):
 
         token_dict = {}
         for token in tokens:
-            token = token.encode('utf8')
+            # token = token.encode('utf8')
             token = token.lower()
             if not token.isalpha():
                 continue
+
             try:
                 lemstem_word = self.lemstem(token)
-                if len(lemstem_word) > 2 and not lemstem_word in self.stopwords:
-                    if self.debug:
-                        print "{0}: {1}".format(token, lemstem_word)
-                    if token_dict.has_key(lemstem_word):
-                        token_dict[lemstem_word] += 1
-                    else:
-                        token_dict[lemstem_word] = 1
             except Exception as e:
-                pass
+                lemstem_word = token
+                # print 'Could not lemmatize: {}'.format(token.encode('utf8'))
+
+            if len(lemstem_word) > 2 and not lemstem_word in self.stopwords:
+                if self.debug:
+                    print "{0}: {1}".format(token.encode('utf8'), lemstem_word.encode('utf8'))
+                if token_dict.has_key(lemstem_word):
+                    token_dict[lemstem_word] += 1
+                else:
+                    token_dict[lemstem_word] = 1
+
         return token_dict
 
     def getLectureRecord(self, lectureId):
@@ -63,22 +73,23 @@ class Tokenizer(object):
         sorted_tokens = sorted(tokens.items(), key=operator.itemgetter(1))
 
         for token in sorted_tokens:
-            if self.debug:
-                print token
             try:
                 with db.transaction() as txn:
                     LectureWord.create(
                         lecture = lecture,
                         word = token[0],
                         count = token[1],
-                        active = True
+                        active = True,
+                        weight = 0
                     )
                     txn.commit()
             except peewee.OperationalError as e:
                 print "Could not create a record for lecture {0}, word {1}, {2}".format(lecture.id, token[0], e)
 
-        return True
+            if self.debug:
+                print token
 
+        return True
 
     def getCourseRecord(self, courseId):
         try:
@@ -107,7 +118,8 @@ class Tokenizer(object):
     def extractAllCourseTokens(self):
         for course in self.getCourses():
             print course.id, course.name
-            self.extractCourseTokens(course)
+            lectures = self.getLectures(course)
+            self.extractCourseTokens(lectures)
 
     def getLectureWords(self, lecture):
         lectureWords = list(LectureWord.select().where(LectureWord.lecture == lecture))
@@ -117,13 +129,17 @@ class Tokenizer(object):
         for course in self.getCourses():
             print "{}: {}".format(course.id, course.name.encode('utf8'))
             token_dict = {}
+            lecture_token = {}
+
             for lecture in self.getLectures(course):
                 lectureWords = self.getLectureWords(lecture)
                 for lectureWord in lectureWords:
-                    if token_dict.has_key(lectureWord.word):
-                        token_dict[lectureWord.word] += 1
-                    else:
-                        token_dict[lectureWord.word] = 1
+                    if not token_dict.has_key(lectureWord.word):
+                        token_dict[lectureWord.word] = 0
+                        lecture_token[lectureWord.word] = 0
+
+                    token_dict[lectureWord.word] += lectureWord.count
+                    lecture_token[lectureWord.word] += 1
             sorted_tokens = sorted(token_dict.items(), key=operator.itemgetter(1))
             for token in sorted_tokens:
                 try:
@@ -132,17 +148,76 @@ class Tokenizer(object):
                             course = course,
                             word = token[0],
                             count = token[1],
-                            active = True
+                            active = True,
+                            lectures = lecture_token[token[0]]
                         )
                         txn.commit()
                 except peewee.OperationalError as e:
-                    print "Could not create a record for course {0}, word {1}, {2}".format(course.id, token[0], e)
+                    print "Could not create a record for course {0}, word {1}, {2}".format(course.name.encode('utf8'), token[0].encode('utf8'), e)
 
+    def getCourseWords(self, courseId=0):
+        if courseId == 0:
+            courseWords = CourseWord.select()
+        else:
+            courseWords = CourseWord.select().where(CourseWord.course == courseId)
+        return list(courseWords)
+
+    def createCorpusTokens(self):
+        token_dict = {}
+        for courseWord in self.getCourseWords():
+            if token_dict.has_key(courseWord.word):
+                token_dict[courseWord.word] += courseWord.count
+            else:
+                token_dict[courseWord.word] = courseWord.count
+            # print courseWord.word, courseWord.count
+
+        sorted_tokens = sorted(token_dict.items(), key=operator.itemgetter(1))
+        for token in sorted_tokens:
+            print token
+            try:
+                with db.transaction() as txn:
+                    CorpusWord.create(
+                        word = token[0],
+                        count = token[1],
+                        active = True
+                    )
+                    txn.commit()
+            except peewee.OperationalError as e:
+                print "Could not create a record for word {}, {}".format(token[0], e)
+
+    def calc_tf(self):
+        for course in self.getCourses(55):
+            print course.name
+            for lecture in self.getLectures(course):
+                maxCount = 0
+                for lectureWord in self.getLectureWords(lecture):
+                    maxCount = max(maxCount, lectureWord.count)
+
+                for lectureWord in self.getLectureWords(lecture):
+                    try:
+                        with db.transaction():
+                            lectureWord.weight = 0.5 + (0.5 * lectureWord.count) / maxCount
+                            lectureWord.save()
+                    except peewee.OperationalError as e:
+                        print e
+
+
+
+                # print lecture.id, maxCount
 
 if __name__ == '__main__':
     tok = Tokenizer()
     # tok.debug = True
+
+    # print "Extracting all tokens"
     # tok.extractAllCourseTokens()
-    tok.createCourseTokens()
+
+    # print "Creating course tokens"
+    # tok.createCourseTokens()
+
+    # tok.calc_tf()
+
+    tok.createCorpusTokens()
+
 
 
