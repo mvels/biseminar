@@ -8,6 +8,7 @@ from pdfminer.pdftypes import PDFException
 import peewee
 import os.path
 
+
 class Pdf2Txt(object):
     def __init__(self):
         self.caching = True
@@ -49,6 +50,7 @@ class Pdf2Txt(object):
         outfp.close()
         return retval
 
+
 def main():
     pdf2txt = Pdf2Txt()
     lectures = Lecture.select().where(Lecture.content == '', Lecture.url % "*pdf").limit(1000)
@@ -63,13 +65,6 @@ def main():
                 lecture.save()
         except peewee.OperationalError as e:
             print e
-
-    # ifile = '/Users/martin/Dropbox/kool/business_intelligence_seminar/project/tutorial/pdf/2015/cg/spring/Main/Lectures/Geometry.pdf'
-    # ofile = '/Users/martin/Dropbox/kool/business_intelligence_seminar/project/tutorial/pdf/2015/cg/spring/Main/Lectures/ttt.txt'
-    # print "start convert ..."
-    # content = pdf2txt.convert(ifile)
-    # print "{0}".format(content[0:100])
-    # print "... done"
 
 if __name__ == '__main__':
     main()

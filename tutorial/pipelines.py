@@ -12,6 +12,7 @@ import urllib
 from DataModel import Course, Lecture, db
 import peewee
 
+
 class CoursePipeline(object):
     def process_item(self, item, spider):
         if isinstance(item, CoursesItem):
@@ -32,6 +33,7 @@ class CoursePipeline(object):
                     print 'Could not create a record for {0}'.format(course_code)
 
         return item
+
 
 class DataPipeline(object):
     def process_item(self, item, spider):

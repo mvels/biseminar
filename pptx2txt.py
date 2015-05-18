@@ -3,6 +3,7 @@ import peewee
 import os.path
 from pptx import Presentation, exc
 
+
 class Pptx2Txt(object):
     def __init__(self):
         pass
