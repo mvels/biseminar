@@ -8,13 +8,13 @@ from tutorial.DataModel import Course, Lecture, CourseWord, LectureWord
 
 def main():
     #Perform LDA in scope of all courses
-    #lda_for_all_courses()
+    lda_for_all_courses()
 
     #Perform LDA for all material in scope of one course
     #Test on course 'Andmekaeve'
-    courses = Course.select().where(Course.id == 2)
-    for course in courses:
-        lda_for_course_material(course)
+    #courses = Course.select().where(Course.id == 2)
+    #for course in courses:
+    #    lda_for_course_material(course)
 
 
 def lda_for_course_material(course):
@@ -58,8 +58,12 @@ def perform_lda(word_dict, titles, n_topics, n_top_words, n_top_topic):
     #Iterate over topic word distributions
     for i, topic_dist in enumerate(model.topic_word_):
         top_topic_words = np.array(res['vocab'])[np.argsort(topic_dist)][:-n_top_words-1:-1]
+        top_word_probs = topic_dist[np.argsort(topic_dist)][:-n_top_words-1:-1]
 
-        print('Topic {}: {}'.format(i, " ".join(top_topic_words)))
+        top_word_str = ", ".join([remove_accents(x)+"("+str(round(y, 2)*100)+"%)"
+                                  for x, y in zip(top_topic_words, top_word_probs)])
+
+        print('Topic {}: {}'.format(i, top_word_str))
 
     #Document-topic distributions
     doc_topic = model.doc_topic_
