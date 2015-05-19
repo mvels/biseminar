@@ -44,4 +44,16 @@ class CorpusWord(BaseModel):
     count = peewee.IntegerField()
     active = peewee.BooleanField()
 
-db.create_tables([Course, Lecture, CourseWord, LectureWord, CorpusWord], safe=True)
+
+class TopicWord(BaseModel):
+    topic = peewee.IntegerField()
+    word = peewee.CharField()
+    weight = peewee.DoubleField()
+
+
+class CourseTopic(BaseModel):
+    course = peewee.ForeignKeyField(Course)
+    topic = peewee.IntegerField()
+    weight = peewee.DoubleField()
+
+db.create_tables([Course, Lecture, CourseWord, LectureWord, CorpusWord, TopicWord, CourseTopic], safe=True)
