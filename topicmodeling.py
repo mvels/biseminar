@@ -69,9 +69,9 @@ def lda_for_all_courses(n_topics, n_top_words, n_top_topic):
                     iteration = i*10,
                     loglikelihood = round(x, 2),
                 )
-            txn.commit()
+                txn.commit()
         except peewee.OperationalError as e:
-            print "Could not create a record for loglikelihood {0}, {1}".format(x, e)
+            print "Could not create a record for loglikelihood {}, {}".format(x, e)
 
     # Iterate over topic word distributions
     for i, topic_dist in enumerate(model.topic_word_):
@@ -88,7 +88,7 @@ def lda_for_all_courses(n_topics, n_top_words, n_top_topic):
                     )
                     txn.commit()
             except peewee.OperationalError as e:
-                print "Could not create a record for topic {0}, word {1}, {2}".format(i, top_word, e)
+                print "Could not create a record for topic {}, word {}, {}".format(i, top_word, e)
 
         top_word_str = ", ".join([remove_accents(x)+"("+str(round(y*100, 2))+"%)"
                                   for x, y in zip(top_topic_words, top_word_probs)])
