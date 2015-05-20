@@ -5,12 +5,12 @@ import lda.datasets
 from sklearn.feature_extraction import DictVectorizer
 from tutorial.DataModel import Course, Lecture, CourseWord, LectureWord
 import peewee
-from tutorial.DataModel import db, TopicWord, CourseTopic
+from tutorial.DataModel import db, TopicWord, CourseTopic, LDALogLikelihood
 
 
 def main():
     #Perform LDA in scope of all courses
-    lda_for_all_courses(100, 10, 5)
+    lda_for_all_courses(60, 10, 5)
 
     #Perform LDA for all material in scope of one course
     #Test on course 'Andmekaeve'
@@ -61,6 +61,17 @@ def lda_for_all_courses(n_topics, n_top_words, n_top_topic):
         courses_dict.append(dict([(x.word, x.count) for x in course_words]))
 
     model, vocab = perform_lda(courses_dict, n_topics)
+
+    for i, x in enumerate(model.loglikelihoods_):
+        try:
+            with db.transaction() as txn:
+                LDALogLikelihood.create(
+                    iteration = i*10,
+                    loglikelihood = round(x, 2),
+                )
+            txn.commit()
+        except peewee.OperationalError as e:
+            print "Could not create a record for loglikelihood {0}, {1}".format(x, e)
 
     # Iterate over topic word distributions
     for i, topic_dist in enumerate(model.topic_word_):

@@ -56,4 +56,9 @@ class CourseTopic(BaseModel):
     topic = peewee.IntegerField()
     weight = peewee.DoubleField()
 
-db.create_tables([Course, Lecture, CourseWord, LectureWord, CorpusWord, TopicWord, CourseTopic], safe=True)
+
+class LDALogLikelihood(BaseModel):
+    iteration = peewee.IntegerField()
+    loglikelihood = peewee.DoubleField()
+
+db.create_tables([Course, Lecture, CourseWord, LectureWord, CorpusWord, TopicWord, CourseTopic, LDALogLikelihood], safe=True)
