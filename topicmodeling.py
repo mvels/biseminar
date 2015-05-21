@@ -10,18 +10,18 @@ from tutorial.DataModel import db, TopicWord, CourseTopic, LDALogLikelihood
 
 def main():
     #Perform LDA in scope of all courses
-    lda_for_all_courses(60, 10, 5)
+    #lda_for_all_courses(60, 10, 5)
 
     #Perform LDA for all material in scope of one course
     #Test on course 'Andmekaeve'
-    #courses = Course.select().where(Course.id == 2)
-    #for course in courses:
-    #    lda_for_course_material(course, 10, 15, 5)
+    courses = Course.select().where(Course.id == 2)
+    for course in courses:
+        lda_for_course_material(course, 10, 15, 5)
 
 
 def lda_for_course_material(course, n_topics, n_top_words, n_top_topic):
     lectures = Lecture.select().where(Lecture.course == course)
-    lectures_size = Lecture.select().count()
+    lectures_size = Lecture.select().where(Lecture.course == course).count()
     lecture_dict = []
     for lecture in lectures:
         lecture_words = LectureWord.select().where(LectureWord.lecture == lecture)
@@ -49,7 +49,7 @@ def lda_for_course_material(course, n_topics, n_top_words, n_top_topic):
         title = remove_accents(lectures[i].path.split("/")[-1])
 
         doc_topic_str = ", ".join([str(x)+"("+str(round(y*100, 2))+"%)" for x, y in zip(top_topics, topic_probs)])
-        print("{} (top {} topics: {})".format(remove_accents(title), n_top_topic, doc_topic_str))
+        print("{} (top {} topics: {})".format(title, n_top_topic, doc_topic_str))
 
 
 def lda_for_all_courses(n_topics, n_top_words, n_top_topic):
@@ -139,7 +139,7 @@ def perform_lda(word_dict, n_topics):
     #print_word_dist(res)
 
     #Init lda
-    model = lda.LDA(n_topics=n_topics, n_iter=5000, random_state=1)
+    model = lda.LDA(n_topics=n_topics, n_iter=1000, random_state=1)
 
     #Fit model
     model.fit(train_data_features.astype('int32'))
