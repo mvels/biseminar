@@ -10,17 +10,30 @@ class CoursesSpider(scrapy.Spider):
     name = "courses"
     allowed_domains = ["courses.cs.ut.ee"]
     start_urls = [
-        "https://courses.cs.ut.ee/"
+        "https://courses.cs.ut.ee/courses/old"
     ]
 
+    filter_url = "https://courses.cs.ut.ee"
+    allowed_semesters = [("2015", "spring"), ("2014", "fall"), ("2014", "spring"), ("2013", "fall")]
+
     def parse(self, response):
+        for sel in response.xpath("//table[@class=\"table previous-years\"]/tr"):
+            for it in sel.xpath(".//a"):
+                link = it.xpath("@href").extract()[0]
+
+                # Choose only wanted semesters
+                if any([x in link and y in link for x, y in self.allowed_semesters]):
+                    request = scrapy.Request(self.filter_url + ''.join(link), callback=self.parse_courses)
+                    yield request
+
+    def parse_courses(self, response):
         for sel in response.xpath("//ul[@class=\"course-list\"]").xpath(".//li"):
             item = CoursesItem()
             item["title"] = sel.xpath("a/text()").extract()
             item["link"] = sel.xpath("a/@href").extract()
             item["code"] = sel.xpath(".//span/text()").extract()
             yield item
-            request = scrapy.Request("https://courses.cs.ut.ee" + ''.join(item['link']), callback=self.parse_navbar)
+            request = scrapy.Request(self.filter_url + ''.join(item['link']), callback=self.parse_navbar)
             request.meta['course'] = item
             yield request
 
@@ -28,7 +41,7 @@ class CoursesSpider(scrapy.Spider):
         for sel in response.xpath("//nav[@class=\"sidebar\"]").xpath(".//a"):
             t_link = ''.join(sel.xpath("@href").extract())
             # only follow links in navbar that are inside allowed domain
-            if t_link.find(self.start_urls[0]) > -1:
+            if t_link.find(self.filter_url) > -1:
                 item = CoursePageItem()
                 item["title"] = sel.xpath("text()").extract()
                 item["link"] = sel.xpath("@href").extract()
@@ -56,7 +69,7 @@ class CoursesSpider(scrapy.Spider):
                 item = DataItem()
                 item['title'] = sel.xpath("text()").extract()
                 item['link'] = sel.xpath("@href").extract()
-                item['path'] = '/' + ''.join(response.url).replace(self.start_urls[0], '')
+                item['path'] = '/' + ''.join(response.url).replace(self.filter_url, '')
                 course = response.meta['course']
                 item['course_code'] = course['code']
                 item['content'] = ''
