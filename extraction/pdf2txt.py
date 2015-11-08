@@ -40,7 +40,7 @@ class Pdf2Txt(object):
                                           caching=self.caching, check_extractable=True):
                 page.rotate = (page.rotate + self.rotation) % 360
                 interpreter.process_page(page)
-        except PDFException as e:
+        except (PDFException, MemoryError) as e:
             print "Could not extract text {0}".format(e)
         fp.close()
         device.close()
