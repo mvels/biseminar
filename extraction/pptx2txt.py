@@ -32,7 +32,7 @@ class Pptx2Txt(object):
         return retval
 
     def extract_text(self):
-        lectures = Lecture.select().where(Lecture.content == '', Lecture.url % "*pptx").limit(1000)
+        lectures = Lecture.select().where(Lecture.content == '', Lecture.url % "*pptx")
         for lecture in list(lectures):
             if not os.path.exists(self.prefix+lecture.path):
                 print "File not found: {0}".format(lecture.path)

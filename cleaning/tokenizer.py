@@ -1,11 +1,13 @@
 from nltk.stem import PorterStemmer
 from nltk import WordNetLemmatizer
 from nltk import word_tokenize
-from nltk.corpus import stopwords
 from db.DataModel import db, Course, Lecture, LectureWord, CourseWord, CorpusWord
 import operator
 import peewee
 from StopWord import StopWord
+import lemmagen.lemmatizer
+from lemmagen.lemmatizer import Lemmatizer
+from langdetect import detect
 
 
 class Tokenizer(object):
@@ -13,13 +15,13 @@ class Tokenizer(object):
         self.debug = False
         self.stemmer = PorterStemmer()
         self.lemmatizer = WordNetLemmatizer()
+        self.estLemmatizer = Lemmatizer(dictionary=lemmagen.DICTIONARY_ESTONIAN)
         self.lemmatize = lemmatize
         self.stopwords = self.get_stopwords()
 
     def get_stopwords(self):
         sw = StopWord()
         return set(sw.words)
-        # return set(stopwords.words('english'))
 
     def lemstem(self, token):
         if self.lemmatize:
@@ -27,30 +29,36 @@ class Tokenizer(object):
         else:
             return self.stemmer.stem(token)
 
-    def extractTokens(self, text):
+    def extractTokens(self, text, path):
         try:
             tokens = word_tokenize(text)
-        except UnicodeEncodeError as e:
+        except UnicodeEncodeError:
             tokens = []
+
+        if not tokens:
+            return {}
+
+        est_text = self.is_estonian(text)
 
         token_dict = {}
         for token in tokens:
-            # token = token.encode('utf8')
             token = token.lower()
 
-            #check if string consists of alphabetic characters only
-            if not token.isalpha():
+            # check if string consists of alphabetic characters only
+            if not (token.isalpha() or len(token) > 2):
                 continue
 
             try:
-                lemstem_word = self.lemstem(token)
-            except Exception as e:
+                if est_text:
+                    lemstem_word = self.estLemmatizer.lemmatize(token)
+                else:
+                    lemstem_word = self.lemstem(token)
+            except Exception:
                 lemstem_word = token
-                # print 'Could not lemmatize: {}'.format(token.encode('utf8'))
 
-            if len(lemstem_word) > 2 and not lemstem_word in self.stopwords:
+            if lemstem_word not in self.stopwords:
                 if self.debug:
-                    print "{0}: {1}".format(token.encode('utf8'), lemstem_word.encode('utf8'))
+                    print "{0}: {1}".format(token.encode('utf-8'), lemstem_word.encode('utf-8'))
                 if token_dict.has_key(lemstem_word):
                     token_dict[lemstem_word] += 1
                 else:
@@ -58,11 +66,15 @@ class Tokenizer(object):
 
         return token_dict
 
+    def is_estonian(self, text):
+        lan = detect(text)
+        return lan == 'et'
+
     def getLectureRecord(self, lectureId):
         try:
             data = Lecture.select().where(Lecture.id == lectureId).get()
             return data
-        except Exception as e:
+        except Exception:
             return None
 
     def extractLectureTokens(self, lecture):
@@ -70,7 +82,7 @@ class Tokenizer(object):
             return False
 
         text = lecture.content
-        tokens = self.extractTokens(text)
+        tokens = self.extractTokens(text, str(lecture.path))
         sorted_tokens = sorted(tokens.items(), key=operator.itemgetter(1))
 
         for token in sorted_tokens:
@@ -96,7 +108,7 @@ class Tokenizer(object):
         try:
             data = Course.select().where(Course.id == courseId).get()
             return data
-        except Exception as e:
+        except Exception:
             return None
 
     def getLectures(self, course):
@@ -107,7 +119,7 @@ class Tokenizer(object):
         print "Lecture count: {0}".format(len(lectures))
         for lecture in lectures:
             print "Lecture: {0}".format(lecture.id)
-            result = self.extractLectureTokens(lecture)
+            self.extractLectureTokens(lecture)
 
     def getCourses(self, courseId=0):
         if courseId:
@@ -171,7 +183,6 @@ class Tokenizer(object):
                 token_dict[courseWord.word] += courseWord.count
             else:
                 token_dict[courseWord.word] = courseWord.count
-                # print courseWord.word, courseWord.count
 
         sorted_tokens = sorted(token_dict.items(), key=operator.itemgetter(1))
         for token in sorted_tokens:
@@ -203,13 +214,13 @@ class Tokenizer(object):
                     except peewee.OperationalError as e:
                         print e
 
-from nltk import download
+
 if __name__ == '__main__':
     tok = Tokenizer()
     # tok.debug = True
 
-    #Download first time
-    #from nltk import download
+    # Download first time
+    # from nltk import download
     #download('punkt')
 
     print "Extracting all tokens"

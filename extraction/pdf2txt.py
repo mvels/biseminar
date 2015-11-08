@@ -52,7 +52,7 @@ class Pdf2Txt(object):
         return retval
 
     def extract_text(self):
-        lectures = Lecture.select().where(Lecture.content == '', Lecture.url % "*pdf").limit(1000)
+        lectures = Lecture.select().where(Lecture.content == '', Lecture.url % "*pdf")
 
         for lecture in list(lectures):
             if not os.path.exists(self.prefix+lecture.path):

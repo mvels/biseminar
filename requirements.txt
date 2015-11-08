@@ -10,3 +10,5 @@ scikit-learn>=0.16
 lda>=1.0
 beautifulsoup4>=4.3
 python-pptx>=0.5
+Lemmagen>=1.1.1
+langdetect>=1.0.5

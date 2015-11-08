@@ -8,7 +8,7 @@ class Html2txt(object):
         pass
 
     def extract_text(self):
-        lectures = Lecture.select().where(Lecture.content != '', Lecture.path == "").limit(1000)
+        lectures = Lecture.select().where(Lecture.content != '', Lecture.path == "")
         for lecture in list(lectures):
             soup = BeautifulSoup(lecture.content)
             print lecture.url
