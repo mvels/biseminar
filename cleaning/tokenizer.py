@@ -45,7 +45,7 @@ class Tokenizer(object):
             token = token.lower()
 
             # check if string consists of alphabetic characters only
-            if not (token.isalpha() or len(token) > 2):
+            if not (token.isalpha() and len(token) > 2):
                 continue
 
             try:
