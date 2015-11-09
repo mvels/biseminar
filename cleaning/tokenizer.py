@@ -29,7 +29,7 @@ class Tokenizer(object):
         else:
             return self.stemmer.stem(token)
 
-    def extractTokens(self, text, path):
+    def extractTokens(self, text):
         try:
             tokens = word_tokenize(text)
         except UnicodeEncodeError:
@@ -67,8 +67,12 @@ class Tokenizer(object):
         return token_dict
 
     def is_estonian(self, text):
-        lan = detect(text)
-        return lan == 'et'
+        est = False
+        try:
+            est = detect(text) == 'et'
+        except Exception:
+            pass
+        return est
 
     def getLectureRecord(self, lectureId):
         try:
@@ -82,7 +86,7 @@ class Tokenizer(object):
             return False
 
         text = lecture.content
-        tokens = self.extractTokens(text, str(lecture.path))
+        tokens = self.extractTokens(text)
         sorted_tokens = sorted(tokens.items(), key=operator.itemgetter(1))
 
         for token in sorted_tokens:
