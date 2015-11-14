@@ -22,10 +22,13 @@ class CoursePipeline(object):
             except Course.DoesNotExist:
                 print "course record not found, creating"
                 try:
+                    course_time = item['link'][0].split("/")
                     with db.transaction():
                         Course.create(
                             code=course_code,
                             name=''.join(item['title']),
+                            year=course_time[1],
+                            semester=''.join(course_time[-1]),
                             url=''.join(item['link']),
                             path='raw_data' + ''.join(item['link'])
                         )
@@ -43,9 +46,17 @@ class DataPipeline(object):
             course_code = ''.join(item['course_code'])
             content = ''.join(item['content'])
             path = ''
+            year = ''.join(item['year'])
+            semester = ''.join(item['semester'])
 
             try:
                 course = Course.get(Course.code == course_code)
+
+                #Currenly we gather one semester worth of data for each course.
+                #(e.g if we gather data over the span of two years and a course is given
+                #every semester, we only take one semester worth of material for that course)
+                if course.year != year and course.semester != semester:
+                    return item
             except Course.DoesNotExist:
                 course = None
                 print "Non-existing course: {0}".format(course_code)

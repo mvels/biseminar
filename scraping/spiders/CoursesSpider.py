@@ -22,9 +22,12 @@ class CoursesSpider(scrapy.Spider):
                 link = it.xpath("@href").extract()[0]
 
                 # Choose only wanted semesters
-                if any([x in link and y in link for x, y in self.allowed_semesters]):
-                    request = scrapy.Request(self.filter_url + ''.join(link), callback=self.parse_courses)
-                    yield request
+                for x in self.allowed_semesters:
+                    if x[0] in link and x[1] in link:
+                        request = scrapy.Request(self.filter_url + ''.join(link), callback=self.parse_courses)
+                        request.meta['year'] = x[0]
+                        request.meta['semester'] = x[1]
+                        yield request
 
     def parse_courses(self, response):
         for sel in response.xpath("//ul[@class=\"course-list\"]").xpath(".//li"):
@@ -35,6 +38,8 @@ class CoursesSpider(scrapy.Spider):
             yield item
             request = scrapy.Request(self.filter_url + ''.join(item['link']), callback=self.parse_navbar)
             request.meta['course'] = item
+            request.meta['year'] = response.meta['year']
+            request.meta['semester'] = response.meta['semester']
             yield request
 
     def parse_navbar(self, response):
@@ -48,6 +53,8 @@ class CoursesSpider(scrapy.Spider):
                 # yield item
                 request = scrapy.Request(''.join(item['link']), callback=self.parse_article)
                 request.meta['course'] = response.meta['course']
+                request.meta['year'] = response.meta['year']
+                request.meta['semester'] = response.meta['semester']
                 yield request
 
     def parse_article(self, response):
@@ -59,6 +66,8 @@ class CoursesSpider(scrapy.Spider):
                 item['content'] = sel.extract()
                 course = response.meta['course']
                 item['course_code'] = course['code']
+                item['year'] = response.meta['year']
+                item['semester'] = response.meta['semester']
                 yield item
         except AttributeError as e:
             pass
@@ -73,6 +82,8 @@ class CoursesSpider(scrapy.Spider):
                 course = response.meta['course']
                 item['course_code'] = course['code']
                 item['content'] = ''
+                item['year'] = response.meta['year']
+                item['semester'] = response.meta['semester']
                 yield item
 
     def is_valid_url(self, url):

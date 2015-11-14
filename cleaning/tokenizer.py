@@ -42,7 +42,7 @@ class Tokenizer(object):
 
         token_dict = {}
         for token in tokens:
-            token = token.lower()
+            token = token.lower().trim()
 
             # check if string consists of alphabetic characters only
             if not (token.isalpha() and len(token) > 2):

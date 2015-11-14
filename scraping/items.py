@@ -20,12 +20,13 @@ class CoursePageItem(scrapy.Item):
 
 
 class DataItem(scrapy.Item):
-    type = scrapy.Field()
     course_code = scrapy.Field()
     title = scrapy.Field()
     link = scrapy.Field()
     path = scrapy.Field()
     content = scrapy.Field()
+    year = scrapy.Field()
+    semester = scrapy.Field()
 
 
 class TeacherItem(scrapy.Item):

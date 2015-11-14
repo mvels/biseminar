@@ -13,6 +13,8 @@ class BaseModel(peewee.Model):
 class Course(BaseModel):
     name = peewee.CharField()
     code = peewee.CharField()
+    year = peewee.CharField()
+    semester = peewee.CharField()
     url = peewee.CharField()
     path = peewee.CharField()
 
@@ -63,6 +65,18 @@ class LDALogLikelihood(BaseModel):
     loglikelihood = peewee.DoubleField()
 
 
+class LectureTopic(BaseModel):
+    lecture = peewee.ForeignKeyField(Lecture)
+    topic = peewee.IntegerField()
+    weight = peewee.DoubleField()
+
+
+class LectureTopicWord(BaseModel):
+    topic = peewee.IntegerField()
+    word = peewee.CharField()
+    weight = peewee.DoubleField()
+
+
 if __name__ == '__main__':
-    db.create_tables([Course, Lecture, CourseWord, LectureWord, CorpusWord, TopicWord, CourseTopic, LDALogLikelihood],
-                     safe=True)
+    db.create_tables([Course, Lecture, CourseWord, LectureWord, CorpusWord, TopicWord, CourseTopic, LDALogLikelihood,
+                      LectureTopic, LectureTopicWord], safe=True)
