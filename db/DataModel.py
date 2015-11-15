@@ -23,6 +23,7 @@ class Lecture(BaseModel):
     course = peewee.ForeignKeyField(Course)
     url = peewee.CharField()
     path = peewee.CharField()
+    name = peewee.CharField()
     content = peewee.TextField()
 
 
@@ -73,6 +74,7 @@ class LectureTopic(BaseModel):
 
 class LectureTopicWord(BaseModel):
     topic = peewee.IntegerField()
+    course = peewee.ForeignKeyField(Course)
     word = peewee.CharField()
     weight = peewee.DoubleField()
 

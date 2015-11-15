@@ -55,7 +55,7 @@ class DataPipeline(object):
                 #Currenly we gather one semester worth of data for each course.
                 #(e.g if we gather data over the span of two years and a course is given
                 #every semester, we only take one semester worth of material for that course)
-                if course.year != year and course.semester != semester:
+                if course.year != year or course.semester != semester:
                     return item
             except Course.DoesNotExist:
                 course = None
@@ -85,11 +85,13 @@ class DataPipeline(object):
             if lecture is None:
                 print "Lecture record not found, creating ..."
                 try:
+                    title = path.split("/")[-1]
                     with db.transaction():
                         Lecture.create(
                             course=course,
                             url=url,
                             path=path,
+                            name=title,
                             content=content
                         )
                 except peewee.OperationalError as e:
