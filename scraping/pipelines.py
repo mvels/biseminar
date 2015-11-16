@@ -85,7 +85,7 @@ class DataPipeline(object):
             if lecture is None:
                 print "Lecture record not found, creating ..."
                 try:
-                    title = path.split("/")[-1]
+                    title = self.__get_title(url)
                     with db.transaction():
                         Lecture.create(
                             course=course,
@@ -105,3 +105,10 @@ class DataPipeline(object):
                     except peewee.OperationalError as e:
                         print e
         return item
+
+    def __get_title(self, url):
+        title = url.split("/")
+        if url.find(".pdf") > -1 or url.find(".pptx") > -1:
+            return title[-1]
+        else:
+            return "Web content - " + str(title[-1])
