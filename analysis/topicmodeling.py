@@ -89,7 +89,7 @@ def lda_for_course_material(course, n_top_words, n_top_topic):
 
 def lda_over_courses(n_top_words, n_top_topic):
     courses = Course.select()
-    courses_size = Course.select().count()
+    courses_size = Course.select(Course.code).distinct().count()
     courses_dict = []
     for course in courses:
         course_words = CourseWord.select().where(CourseWord.course == course)
